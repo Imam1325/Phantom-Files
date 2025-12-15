@@ -11,10 +11,8 @@ def stomp_timestamp(filepath: str):
         return
 
     try:
-        # Генерируем случайное время: от 10 до 300 дней назад
-        days_ago = random.randint(10, 300)
-        # Добавляем шум (секунды), чтобы время не было ровно 00:00:00
-        noise = random.randint(0, 86400)
+        days_ago = random.randint(10, 300)   # Генерируем случайное время: от 10 до 300 дней назад
+        noise = random.randint(0, 86400)   # Добавляем шум (секунды), чтобы время не было ровно 00:00:00
         
         mtime = time.time() - (days_ago * 86400) - noise
         atime = mtime + random.randint(5, 300)

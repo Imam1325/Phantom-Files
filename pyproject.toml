@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phantom-daemon"
+version = "0.1.0"
+description = "Active Defense System with Honeytokens and Auto-Sandboxing"
+readme = "README.md"
+requires-python = ">=3.8"
+# Информация об авторе
+authors = [
+  {name = "h1z3", email = "pkd12305@gmail.com"}
+]
+license = {text = "MIT"}
+
+dependencies = [
+    "watchdog>=3.0.0",
+    "docker>=6.0.0",
+    "PyYAML>=6.0",
+    "Faker>=19.0.0",
+    "Jinja2>=3.1.0"
+]
+
+phantomd = "phantom.main:run"
