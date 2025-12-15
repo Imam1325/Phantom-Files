@@ -1,4 +1,4 @@
-```markdown
+markdown
 # 👻 Phantom Files Daemon
 
 ![Status](https://img.shields.io/badge/Status-MVP-success)
