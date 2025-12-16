@@ -22,9 +22,7 @@ class TrapFactory:
         self.templates_dir = config["paths"]["templates"]
         self.manifest_path = config["paths"]["manifest"]
         
-        # Инициализируем генератор с локалью из конфига
-        locale = config.get("factory", {}).get("locale", "en_US")
-        self.generator = ContentGenerator(locale=locale)
+        self.generator = ContentGenerator()
 
         # Создаем единый профиль "жертвы"
         self.base_context = self.generator.create_base_context()

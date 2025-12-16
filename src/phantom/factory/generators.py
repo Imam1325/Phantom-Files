@@ -23,12 +23,8 @@ class ContentGenerator:
     - Generates fake crypto-material (certs/keys).
     """
     
-    def __init__(self, locale: str = "en_US"):
-        try:
-            self.fake = Faker(locale)
-        except Exception:
-            logger.warning(f"Locale '{locale}' not found for Faker, falling back to 'en_US'.")
-            self.fake = Faker("en_US")
+    def __init__(self):
+            self.fake = Faker()
 
     def _generate_fake_cert_body(self, length: int = 1000) -> str:
         """
