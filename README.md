@@ -1,71 +1,102 @@
+<div align="center">
+
 # 👻 Phantom Files Daemon
 
-[![🇷🇺 Русский](https://img.shields.io/badge/Lang-Русский-blue)](README.ru.md)
-![Version](https://img.shields.io/badge/Version-1.0.0-blue)
-![Python](https://img.shields.io/badge/Python-3.10%2B-yellow)
-![Docker](https://img.shields.io/badge/Docker-Required-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Active_Defense-red)
+**Advanced Active Defense & Deception System for Linux**
 
-> **"The best defense is a trap."**
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Docker](https://img.shields.io/badge/Docker-Required-blue?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-MVP-orange?style=for-the-badge)]()
+[![Russion](https://img.shields.io/badge/Lang-Русский-red?style=for-the-badge)](README.ru.md)
 
-**Phantom Files** is an advanced **Active Defense / Deception** system designed for Linux environments.
-It operates as a system daemon that automatically deploys high-fidelity **polymorphic honeytokens** (trap files), monitors unauthorized access in real-time, and instantly isolates the threat by spawning a **forensic sandbox** to capture attacker TTPs (Tactics, Techniques, and Procedures).
+<p align="center">
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-configuration">Configuration</a> •
+  <a href="#-roadmap">Roadmap</a>
+</p>
 
-Unlike traditional honeypots that require dedicated servers, Phantom Files turns your existing infrastructure into a minefield without impacting legitimate users.
+</div>
+
+---
+
+## 🛡️ Overview
+
+**Phantom Files** is a lightweight, system-level daemon that turns your infrastructure into a minefield for attackers. It implements **Deception** tactics by automatically deploying high-fidelity **polymorphic honeytokens** (fake files) and monitoring them in real-time.
+
+Unlike passive honeypots, Phantom Files acts as an **Active Defense** system. Upon detecting access to a trap file, it instantly spawns an isolated **Forensic Sandbox** (Docker container) to capture the attacker's TTPs (Tactics, Techniques, and Procedures) and network traffic without risking the host system.
+
+> **Philosophy:** "Zero False Positives." Legitimate users have no business touching these files. Any interaction is a confirmed high-fidelity security incident.
 
 ---
 
 ## ⚡ Key Features
 
-### 🏭 1. Smart Polymorphic Factory
-The system doesn't just copy files; it manufactures them.
-*   **Template-Based Generation:** Uses **Jinja2** + **Faker** to generate valid configuration files (`.json`, `.yaml`, `.env`) with realistic but fake credentials.
-*   **Shared Legend Context:** All generated traps share a consistent story (same fake admin name, same internal IP ranges, same passwords) across the system, making the deception indistinguishable from reality.
-*   **Binary Polymorphism:** Implements **Steganographic Watermarking** for binary files (DOCX, XLSX, PDF). It injects a unique ID into the file structure (e.g., ZIP comments for Office files) without breaking validity. Every file has a unique hash sum.
+### 🏭 1. Polymorphic Trap Factory
+The system synthesizes files rather than just copying them. Every deployment is unique.
+*   **Template-Based Generation:** Uses **Jinja2** + **Faker** to generate syntactically valid configuration files (`.json`, `.yaml`, `.env`) filled with realistic fake credentials.
+*   **Shared Legend Context:** All traps share a consistent narrative (same fake admin identity, internal IP ranges, and passwords) across the system.
+*   **Binary Polymorphism:** Implements **Steganographic Watermarking** for binary files (`.docx`, `.xlsx`, `.pdf`). It injects unique IDs into ZIP comments or file tails, ensuring every file has a unique hash sum.
 
 ### 🕵️ 2. Anti-Forensics & Time Stomping
-*   **Time Stomping:** Automatically modifies `atime` and `mtime` metadata of generated traps. Files appear to be created months ago (randomized between 10-300 days), fooling attackers who look for "freshly created" baits.
+*   **Time Stomping:** Automatically manipulates `atime` and `mtime` of generated traps. Files appear to be created months ago (randomized 10-300 days), bypassing heuristic analysis that looks for "freshly created" baits.
 
 ### 👁️ 3. Kernel-Level Monitoring
-*   **Zero-Latency Detection:** Uses `inotify` (via Watchdog) to detect file access events (`OPEN`, `ACCESS`) at the kernel level.
-*   **Zero False Positives:** Traps are placed in non-business directories. Any interaction with them is, by definition, a security incident.
+*   **Real-time Detection:** Uses `inotify` (via Watchdog) to intercept file system events (`OPEN`, `ACCESS`) with millisecond latency.
+*   **Low Overhead:** The daemon sits idly until a trap is touched, consuming negligible CPU resources.
 
 ### 📦 4. Automated Forensic Response
-*   **Instant Isolation:** Upon trigger, the daemon spawns an isolated **Docker container** (`phantom-forensics`) pre-loaded with analysis tools (`tcpdump`, `strace`).
-*   **Evidence Collection:** Captures network traffic (PCAP) and system behavior from the exact moment of the breach.
+*   **Ephemeral Sandbox:** Instantly spawns a hidden **Docker container** (`phantom-forensics`) equipped with `tcpdump` and analysis tools.
+*   **Evidence Collection:** Captures a full PCAP (Packet Capture) of the incident, logging the attacker's attempts to use the stolen credentials or connect to C2 servers.
 
 ---
 
 ## 🏗 Architecture
 
-The project follows **Hexagonal Architecture**, ensuring that the detection logic, trap generation, and response mechanisms are decoupled and easily extensible.
+The project follows **Hexagonal Architecture**, decoupling the core logic from external systems (FS, Docker).
 
 ```mermaid
 graph LR
     H[Attacker] -->|1. Opens Trap| T(Honeytoken File)
-    T -->|2. Kernel Event| S{Sensor Module}
-    S -->|3. Alert| O[Core Orchestrator]
+    T -->|2. Kernel Signal| S{Sensor Module}
+    S -->|3. Trigger| O[Core Orchestrator]
     
     subgraph "Response Pipeline"
-    O -->|4. Log Incident| L[Audit Logger]
+    O -->|4. Audit Log| L[Logger ECS/JSONL]
     O -->|5. Spawn Sandbox| D[Docker Client]
-    D -->|6. Capture TTPs| C((Forensic Container))
+    D -->|6. Forensics| C((Container))
     end
     
-    L -->|JSONL| J[SIEM / Dashboard]
+    L -->|Alert| J[SIEM / Dashboard]
+```
+
+### Directory Structure
+```text
+phantom-daemon/
+├── config/             # YAML configurations
+│   ├── phantom.yaml    # Main settings
+│   └── traps_manifest.yaml # Trap definitions
+├── resources/          # Assets
+│   └── templates/      # Jinja2 and binary templates
+├── src/phantom/
+│   ├── factory/        # Polymorphic generation logic
+│   ├── sensors/        # Monitoring drivers (inotify)
+│   ├── sandbox/        # Docker orchestration
+│   └── core/           # Event processing
 ```
 
 ---
 
-## 🚀 Installation
+## 🚀 Quick Start
 
 ### Prerequisites
 *   Linux (Ubuntu/Debian/Arch)
 *   Python 3.10+
-*   Docker Engine installed and running
+*   Docker Engine
 
-### Quick Start
+### Installation
 
 1.  **Clone the repository:**
     ```bash
@@ -73,43 +104,29 @@ graph LR
     cd phantom-daemon
     ```
 
-2.  **Install the package:**
+2.  **Install dependencies & Build Image:**
     ```bash
     make install
     ```
-    *This command installs Python dependencies and builds the `phantom-forensics` Docker image.*
+    *This command installs the package in editable mode and builds the `phantom-forensics` Docker image.*
 
-3.  **Run in Dev Mode:**
-    ```bash
-    make run
-    ```
-
-4.  **Verify Trap Generation:**
+3.  **Verify Trap Generation (Dry Run):**
     ```bash
     make check
     ```
-    *Runs a manual verification script to check file creation, time stomping, and binary integrity.*
+    *Runs a manual verification script to ensure traps are generated correctly with time-stomping.*
+
+4.  **Run the Daemon:**
+    ```bash
+    sudo make run
+    ```
 
 ---
 
 ## ⚙️ Configuration
 
-The system is fully data-driven. You don't need to touch the code to add new traps.
+Phantom Files is **Data-Driven**. You define traps in `config/traps_manifest.yaml`.
 
-### 1. Main Config (`config/phantom.yaml`)
-Define system paths and sandbox behavior.
-```yaml
-paths:
-  traps_dir: "/tmp/phantom_traps"
-  logs_dir: "/var/log/phantom"
-
-sandbox:
-  image: "phantom-forensics:v1"
-  command: "tcpdump -i eth0 -w /evidence/capture.pcap"
-```
-
-### 2. Trap Manifest (`config/traps_manifest.yaml`)
-Define your minefield.
 ```yaml
 traps:
   - id: trap-aws-root
@@ -127,28 +144,17 @@ traps:
 
 ---
 
-## 🛡️ Demo Scenario
-
-1.  **Deployment:** The daemon starts. It reads the manifest and deploys 5 unique traps into `/tmp/phantom_traps`.
-2.  **Reconnaissance:** An "attacker" (you) lists the directory. You see `Executive_Salaries.docx` created "6 months ago".
-3.  **Trigger:** You try to read `passwords.txt`.
-4.  **Reaction:**
-    *   **Console:** `🚨 TRAP TRIGGERED: passwords.txt`
-    *   **Logs:** A structured JSONL event is written to `audit.json`.
-    *   **Docker:** A hidden container starts recording network traffic in the background.
-
----
-
 ## 🔮 Roadmap
 
-*   [ ] **eBPF Sensor:** Implement a kernel-space sensor using BCC for stealthier monitoring (bypassing user-space hooks).
-*   [ ] **LLM Integration:** Use local LLMs (Llama 2) to generate semantic content for email archives and chat logs.
+*   [ ] **eBPF Sensor:** Implement a kernel-space sensor using BCC/libbpf for stealthier syscall monitoring (bypassing user-space hooks).
+*   [ ] **LLM Integration:** Use local LLMs to generate semantic content for email archives and chat logs.
 *   [ ] **Firecracker MicroVMs:** Replace Docker with microVMs for hardware-level isolation.
-*   [ ] **Active Blocking:** Integrate with `iptables` to automatically ban the attacker's IP.
+*   [ ] **Active Blocking:** Integrate with `iptables` / `nftables` to automatically ban the attacker's IP.
 
 ---
 
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-```
+
+---
