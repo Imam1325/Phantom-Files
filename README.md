@@ -1,124 +1,150 @@
-markdown
-# Phantom Files Daemon
+# 👻 Phantom Files Daemon
 
-![Status](https://img.shields.io/badge/Status-MVP-success)
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+[![🇷🇺 Русский](https://img.shields.io/badge/Lang-Русский-blue)](README.ru.md)
+![Version](https://img.shields.io/badge/Version-1.0.0-blue)
+![Python](https://img.shields.io/badge/Python-3.10%2B-yellow)
 ![Docker](https://img.shields.io/badge/Docker-Required-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Active_Defense-red)
 
-**Phantom Files** — это система активной защиты (Active Defense) класса **Deception**, реализованная в виде Linux-демона.
-Система автоматически размещает полиморфные ловушки (Honeytokens) в инфраструктуре, мониторит несанкционированный доступ к ним и мгновенно изолирует угрозу, запуская Forensic-песочницу для сбора TTP (Tactics, Techniques, and Procedures) атакующего.
+> **"The best defense is a trap."**
 
-> **Ключевая особенность:** Проект реализует подход "Zero False Positives". Легитимные пользователи не взаимодействуют со скрытыми файлами-ловушками. Любое срабатывание — это подтвержденный инцидент.
+**Phantom Files** is an advanced **Active Defense / Deception** system designed for Linux environments.
+It operates as a system daemon that automatically deploys high-fidelity **polymorphic honeytokens** (trap files), monitors unauthorized access in real-time, and instantly isolates the threat by spawning a **forensic sandbox** to capture attacker TTPs (Tactics, Techniques, and Procedures).
 
----
-
-## Функциональные возможности
-
-*   **Полиморфные ловушки**: Модуль `Factory` генерирует уникальные файлы (изменяемые хеши, поддельные даты создания, динамический контент) используя `Faker` и `Jinja2`.
-*   **Real-time Monitoring**: Сенсорная подсистема обнаруживает операции `OPEN`, `READ`, `COPY` за миллисекунды (используется абстракция над `inotify`).
-*   **Автоматическая изоляция**: При сработывании триггера демон поднимает **Docker-контейнер**, имитирующий работу сервиса, и переключает внимание атакующего на него.
-*   **Аудит безопасности**: Все события логируются в формате JSONL, готовом для интеграции с SIEM (ELK, Splunk, Graylog).
-*   **Systemd Native**: Архитектура приложения соответствует стандартам Linux-сервисов (автозапуск, конфигурация через YAML, управление через systemctl).
+Unlike traditional honeypots that require dedicated servers, Phantom Files turns your existing infrastructure into a minefield without impacting legitimate users.
 
 ---
 
-## Архитектура
+## ⚡ Key Features
 
-Проект построен по принципам **Hexagonal Architecture** (Ports and Adapters), что обеспечивает модульность и заменяемость компонентов (например, драйвер мониторинга или движок виртуализации).
+### 🏭 1. Smart Polymorphic Factory
+The system doesn't just copy files; it manufactures them.
+*   **Template-Based Generation:** Uses **Jinja2** + **Faker** to generate valid configuration files (`.json`, `.yaml`, `.env`) with realistic but fake credentials.
+*   **Shared Legend Context:** All generated traps share a consistent story (same fake admin name, same internal IP ranges, same passwords) across the system, making the deception indistinguishable from reality.
+*   **Binary Polymorphism:** Implements **Steganographic Watermarking** for binary files (DOCX, XLSX, PDF). It injects a unique ID into the file structure (e.g., ZIP comments for Office files) without breaking validity. Every file has a unique hash sum.
+
+### 🕵️ 2. Anti-Forensics & Time Stomping
+*   **Time Stomping:** Automatically modifies `atime` and `mtime` metadata of generated traps. Files appear to be created months ago (randomized between 10-300 days), fooling attackers who look for "freshly created" baits.
+
+### 👁️ 3. Kernel-Level Monitoring
+*   **Zero-Latency Detection:** Uses `inotify` (via Watchdog) to detect file access events (`OPEN`, `ACCESS`) at the kernel level.
+*   **Zero False Positives:** Traps are placed in non-business directories. Any interaction with them is, by definition, a security incident.
+
+### 📦 4. Automated Forensic Response
+*   **Instant Isolation:** Upon trigger, the daemon spawns an isolated **Docker container** (`phantom-forensics`) pre-loaded with analysis tools (`tcpdump`, `strace`).
+*   **Evidence Collection:** Captures network traffic (PCAP) and system behavior from the exact moment of the breach.
+
+---
+
+## 🏗 Architecture
+
+The project follows **Hexagonal Architecture**, ensuring that the detection logic, trap generation, and response mechanisms are decoupled and easily extensible.
 
 ```mermaid
 graph LR
-    H[Attacker] -->|Access| T(Trap File)
-    T -->|Event| S{Sensor Module}
-    S -->|Trigger| O[Core Orchestrator]
-    O -->|Start| M[Sandbox Manager]
-    M -->|Spawn| C((Docker Container))
-    O -->|Log| L[Audit Logger]
-    L -->|JSON| J[SIEM / Dashboard]
+    H[Attacker] -->|1. Opens Trap| T(Honeytoken File)
+    T -->|2. Kernel Event| S{Sensor Module}
+    S -->|3. Alert| O[Core Orchestrator]
+    
+    subgraph "Response Pipeline"
+    O -->|4. Log Incident| L[Audit Logger]
+    O -->|5. Spawn Sandbox| D[Docker Client]
+    D -->|6. Capture TTPs| C((Forensic Container))
+    end
+    
+    L -->|JSONL| J[SIEM / Dashboard]
 ```
+
 ---
 
-## Установка и запуск
+## 🚀 Installation
 
-### Предварительные требования
+### Prerequisites
 *   Linux (Ubuntu/Debian/Arch)
 *   Python 3.10+
-*   Docker Engine
+*   Docker Engine installed and running
 
-### 1. Клонирование и сборка
-```bash
-git clone https://github.com/your-username/phantom-daemon.git
-cd phantom-daemon
+### Quick Start
 
-# Установка пакета в систему
-pip install -e .
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/phantom-daemon.git
+    cd phantom-daemon
+    ```
 
-### 2. Конфигурация
-Отредактируйте файл `config/phantom.yaml`, указав директории для размещения ловушек и логов:
+2.  **Install the package:**
+    ```bash
+    make install
+    ```
+    *This command installs Python dependencies and builds the `phantom-forensics` Docker image.*
+
+3.  **Run in Dev Mode:**
+    ```bash
+    make run
+    ```
+
+4.  **Verify Trap Generation:**
+    ```bash
+    make check
+    ```
+    *Runs a manual verification script to check file creation, time stomping, and binary integrity.*
+
+---
+
+## ⚙️ Configuration
+
+The system is fully data-driven. You don't need to touch the code to add new traps.
+
+### 1. Main Config (`config/phantom.yaml`)
+Define system paths and sandbox behavior.
 ```yaml
 paths:
   traps_dir: "/tmp/phantom_traps"
   logs_dir: "/var/log/phantom"
+
+sandbox:
+  image: "phantom-forensics:v1"
+  command: "tcpdump -i eth0 -w /evidence/capture.pcap"
 ```
 
-### 3. Запуск (Dev Mode)
-Для отладки и просмотра логов в консоли:
-```bash
-# Через Makefile
-make run
+### 2. Trap Manifest (`config/traps_manifest.yaml`)
+Define your minefield.
+```yaml
+traps:
+  - id: trap-aws-root
+    template: aws_credentials.txt.j2
+    output: .aws/credentials
+    category: credential
+    priority: critical
 
-# Или напрямую
-phantomd
-```
-
-### 4. Запуск (Production Mode)
-Для запуска в фоне как системного сервиса:
-```bash
-# Копирование unit-файла
-sudo cp deploy/phantom.service /etc/systemd/system/
-sudo systemctl daemon-reload
-
-# Запуск демона
-sudo systemctl start phantom
-sudo systemctl enable phantom
-
-# Проверка статуса
-systemctl status phantom
+  - id: trap-salary-doc
+    template: binary/payroll_template.docx
+    output: Executive_Salaries_2024.docx
+    category: document
+    format: binary
 ```
 
 ---
 
-## Сценарий демонстрации
+## 🛡️ Demo Scenario
 
-1.  **Deployment**: Демон запускается, считывает шаблоны из `resources/` и "минирует" папку `/tmp/phantom_traps`, создавая файлы `passwords.txt`, `salary_2024.docx` с фейковыми данными.
-2.  **Reconnaissance**: "Злоумышленник" сканирует директорию и пытается прочитать `passwords.txt`.
-3.  **Detection**: Сенсор перехватывает событие файловой системы.
-4.  **Response**:
-    *   В лог `/var/log/phantom/audit.json` записывается критический инцидент.
-    *   Запускается контейнер `phantom_forensics_<id>`.
-5.  **Analysis**: Система фиксирует время атаки, имя пользователя и затронутый файл.
-
----
-
-## Технологический стек
-
-*   **Core**: Python 3.10
-*   **Monitoring**: `watchdog` (inotify wrapper)
-*   **Isolation**: `Docker SDK for Python`
-*   **Data Generation**: `Faker`, `Jinja2`
-*   **Configuration**: `PyYAML`
-*   **Build System**: `pyproject.toml` (PEP 518)
+1.  **Deployment:** The daemon starts. It reads the manifest and deploys 5 unique traps into `/tmp/phantom_traps`.
+2.  **Reconnaissance:** An "attacker" (you) lists the directory. You see `Executive_Salaries.docx` created "6 months ago".
+3.  **Trigger:** You try to read `passwords.txt`.
+4.  **Reaction:**
+    *   **Console:** `🚨 TRAP TRIGGERED: passwords.txt`
+    *   **Logs:** A structured JSONL event is written to `audit.json`.
+    *   **Docker:** A hidden container starts recording network traffic in the background.
 
 ---
 
-## Roadmap
+## 🔮 Roadmap
 
-*   [ ] Реализация драйвера сенсора на **eBPF (BCC)** для скрытого мониторинга системных вызовов (bypass-resistance).
-*   [ ] Интеграция с **Firecracker microVM** для усиления изоляции песочницы.
-*   [ ] Внедрение **Canary Tokens** в PDF и Word документы для отслеживания открытия файла вне периметра.
-*   [ ] Интеграция уведомлений в Telegram/Slack.
+*   [ ] **eBPF Sensor:** Implement a kernel-space sensor using BCC for stealthier monitoring (bypassing user-space hooks).
+*   [ ] **LLM Integration:** Use local LLMs (Llama 2) to generate semantic content for email archives and chat logs.
+*   [ ] **Firecracker MicroVMs:** Replace Docker with microVMs for hardware-level isolation.
+*   [ ] **Active Blocking:** Integrate with `iptables` to automatically ban the attacker's IP.
 
 ---
 
