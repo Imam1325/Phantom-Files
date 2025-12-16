@@ -30,7 +30,6 @@ Unlike passive honeypots, Phantom Files acts as an **Active Defense** system. Up
 
 > **Philosophy:** "Zero False Positives." Legitimate users have no business touching these files. Any interaction is a confirmed high-fidelity security incident.
 
----
 
 ## ⚡ Key Features
 
@@ -51,7 +50,6 @@ The system synthesizes files rather than just copying them. Every deployment is 
 *   **Ephemeral Sandbox:** Instantly spawns a hidden **Docker container** (`phantom-forensics`) equipped with `tcpdump` and analysis tools.
 *   **Evidence Collection:** Captures a full PCAP (Packet Capture) of the incident, logging the attacker's attempts to use the stolen credentials or connect to C2 servers.
 
----
 
 ## 🏗 Architecture
 
@@ -72,7 +70,6 @@ graph LR
     L -->|Alert| J[SIEM / Dashboard]
 ```
 
----
 
 ## 🚀 Quick Start
 
@@ -106,7 +103,6 @@ graph LR
     sudo make run
     ```
 
----
 
 ## ⚙️ Configuration
 
@@ -127,7 +123,6 @@ traps:
     format: binary
 ```
 
----
 
 ## 📄 License
 
