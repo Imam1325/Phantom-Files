@@ -8,7 +8,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Required-blue?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-MVP-orange?style=for-the-badge)]()
-[![Russion](https://img.shields.io/badge/Lang-Русский-red?style=for-the-badge)](README.ru.md)
+[![Russion](https://img.shields.io/badge/Lang-Русский-red?style=for-the-badge)](README_ru.md)
 
 <p align="center">
   <a href="#-key-features">Key Features</a> •
