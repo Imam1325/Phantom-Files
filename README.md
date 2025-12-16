@@ -72,21 +72,6 @@ graph LR
     L -->|Alert| J[SIEM / Dashboard]
 ```
 
-### Directory Structure
-```text
-phantom-daemon/
-├── config/             # YAML configurations
-│   ├── phantom.yaml    # Main settings
-│   └── traps_manifest.yaml # Trap definitions
-├── resources/          # Assets
-│   └── templates/      # Jinja2 and binary templates
-├── src/phantom/
-│   ├── factory/        # Polymorphic generation logic
-│   ├── sensors/        # Monitoring drivers (inotify)
-│   ├── sandbox/        # Docker orchestration
-│   └── core/           # Event processing
-```
-
 ---
 
 ## 🚀 Quick Start
@@ -141,15 +126,6 @@ traps:
     category: document
     format: binary
 ```
-
----
-
-## 🔮 Roadmap
-
-*   [ ] **eBPF Sensor:** Implement a kernel-space sensor using BCC/libbpf for stealthier syscall monitoring (bypassing user-space hooks).
-*   [ ] **LLM Integration:** Use local LLMs to generate semantic content for email archives and chat logs.
-*   [ ] **Firecracker MicroVMs:** Replace Docker with microVMs for hardware-level isolation.
-*   [ ] **Active Blocking:** Integrate with `iptables` / `nftables` to automatically ban the attacker's IP.
 
 ---
 
