@@ -2,7 +2,8 @@ client
 dev tun
 proto udp
 
-remote vpn.{{ company | lower | replace(" ", "") }}.internal 1194
+# Генерируем адрес VPN-шлюза на основе имени компании
+remote vpn.{{ company | lower | replace(" ", "") | replace(",", "") }}.internal 1194
 
 resolv-retry infinite
 nobind
@@ -13,14 +14,24 @@ auth SHA256
 cipher AES-256-CBC
 remote-cert-tls server
 
+# Метаданные для реалистичности
+# User: {{ admin_name }} <{{ admin_email }}>
+# Device ID: {{ aws_key }}
+
 <ca>
-# fake ca certificate
+-----BEGIN CERTIFICATE-----
+{{ ca_cert_body }}
+-----END CERTIFICATE-----
 </ca>
 
 <cert>
-# fake client certificate
+-----BEGIN CERTIFICATE-----
+{{ client_cert_body }}
+-----END CERTIFICATE-----
 </cert>
 
 <key>
-# fake private key
+-----BEGIN PRIVATE KEY-----
+{{ private_key_body }}
+-----END PRIVATE KEY-----
 </key>

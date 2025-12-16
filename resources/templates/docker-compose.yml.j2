@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  app:
+    image: registry.internal/app:{{ version }}
+    environment:
+      - DATABASE_URL=postgres://admin:{{ db_password }}@{{ db_host }}:5432/db
+    restart: always

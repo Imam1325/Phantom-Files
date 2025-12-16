@@ -22,19 +22,18 @@ class TrapFactory:
         self.templates_dir = config["paths"]["templates"]
         self.manifest_path = config["paths"]["manifest"]
         
-        # --- ИЗМЕНЕНИЕ: Локализация ---
         # Инициализируем генератор с локалью из конфига, по умолчанию 'en_US'
         locale = config.get("factory", {}).get("locale", "en_US")
         self.generator = ContentGenerator(locale=locale)
 
-        # Создаем единый профиль "жертвы"
+        # Создаем единый профиль "жертвы" (Shared Context)
         self.base_context = self.generator.create_base_context()
 
         # Собираем системный контекст
         self.system_context = self._get_system_context()
 
     def _get_system_context(self) -> Dict[str, Any]:
-        """Собирает информацию о текущем пользователе и хосте."""
+        """Собирает информацию о текущем пользователе и хосте (безопасно)."""
         try:
             user = os.getlogin()
         except OSError:
@@ -47,6 +46,9 @@ class TrapFactory:
 
     def _load_trap_tasks(self) -> list:
         """Загружает список задач из YAML-манифеста."""
+        if not os.path.exists(self.manifest_path):
+            logger.error(f"Manifest file not found at: {self.manifest_path}")
+            return []
         try:
             with open(self.manifest_path, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f).get("traps", [])
@@ -61,6 +63,7 @@ class TrapFactory:
 
         os.makedirs(self.traps_dir, exist_ok=True)
         tasks = self._load_trap_tasks()
+        
         if not tasks:
             logger.warning("No trap tasks found in manifest. Nothing to deploy.")
             return {"deployed": 0, "total": 0}
@@ -80,10 +83,12 @@ class TrapFactory:
                 "trap_id": task.get("id"),
             }
 
-            if task["format"] == "text":
+            if task.get("format") == "text":
+                # Для текста генерируем уникальный контекст
                 trap_ctx = self.generator.create_trap_context(self.base_context)
                 self.generator.create_text_trap(tpl_path, out_path, trap_ctx, metadata=metadata)
-            else: # binary
+            else: 
+                # Для бинарников копируем и уникализируем (watermark)
                 self.generator.create_binary_trap(tpl_path, out_path, metadata=metadata)
             success += 1
 

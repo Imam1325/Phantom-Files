@@ -1,17 +1,16 @@
 {
-  "service": "billing",
+  "service": "billing-api",
   "environment": "production",
   "version": "{{ version }}",
   "updated_at": "{{ iso_date }}",
-
   "database": {
     "engine": "postgresql",
     "host": "{{ db_host }}",
     "port": 5432,
     "username": "admin",
-    "password": "{{ db_password }}"
+    "password": "{{ db_password }}",
+    "ssl_mode": "require"
   },
-
   "integrations": {
     "aws_access_key": "AKIA{{ aws_key }}",
     "sentry_dsn": "https://{{ sentry_key }}@sentry.io/{{ sentry_id }}"
