@@ -20,13 +20,10 @@ class ContentGenerator:
     - Supports localization (ru_RU, en_US).
     - Uses Jinja2 for text templates.
     - Implements Smart Watermarking for binary polymorphism.
-    - Generates fake crypto-material (certs/keys) for VPN configs.
+    - Generates fake crypto-material (certs/keys).
     """
     
     def __init__(self, locale: str = "en_US"):
-        """
-        Инициализирует генератор с заданной локалью.
-        """
         try:
             self.fake = Faker(locale)
         except Exception:
@@ -35,8 +32,7 @@ class ContentGenerator:
 
     def _generate_fake_cert_body(self, length: int = 1000) -> str:
         """
-        Генерирует случайный Base64 блок, визуально похожий на тело сертификата/ключа (PEM).
-        Используется для наполнения VPN-конфигов.
+        Генерирует случайный Base64 блок, визуально похожий на тело сертификата (PEM).
         """
         random_bytes = os.urandom(length)
         b64_str = base64.b64encode(random_bytes).decode('utf-8')
@@ -45,7 +41,7 @@ class ContentGenerator:
 
     def create_base_context(self) -> Dict[str, Any]:
         """
-        Создает базовый профиль "жертвы", который будет общим для всех ловушек.
+        Создает базовый профиль "жертвы" (Shared Context).
         """
         return {
             # --- Персональные данные ---
@@ -61,8 +57,7 @@ class ContentGenerator:
             "sentry_id": random.randint(10000, 99999),
             "crm_ip": self.fake.ipv4_private(),
 
-            # --- Криптография (для VPN) ---
-            # Генерируем уникальные "ключи" для этой сессии развертывания
+            # --- Криптография (для VPN и SSH) ---
             "ca_cert_body": self._generate_fake_cert_body(1200),
             "client_cert_body": self._generate_fake_cert_body(1000),
             "private_key_body": self._generate_fake_cert_body(1600),
@@ -70,8 +65,7 @@ class ContentGenerator:
         
     def create_trap_context(self, base_context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Добавляет в контекст "свежие" данные (дату, версию), которые должны
-        быть уникальными для каждого конкретного файла.
+        Добавляет уникальные данные (версию, дату) к базовому профилю.
         """
         ctx = copy.deepcopy(base_context)
         ctx.update({
@@ -88,14 +82,15 @@ class ContentGenerator:
         context: Dict[str, Any],
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """
-        Рендерит текстовый шаблон с предоставленным контекстом.
-        """
+        """Рендерит текстовый шаблон."""
         try:
             with open(template_path, "r", encoding="utf-8") as f:
                 template = Template(f.read())
 
             content = template.render(context)
+
+            # --- ВАЖНО: Создаем папку, если её нет ---
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(content)
@@ -115,15 +110,16 @@ class ContentGenerator:
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
-        Копирует бинарный файл и делает его полиморфным (уникальным по хэшу).
-        - DOCX/XLSX: пишет ID в комментарий ZIP-архива (безопасно).
-        - Другие: пишет ID в конец файла (append).
+        Копирует бинарный файл и делает его полиморфным.
         """
         try:
+            # --- ВАЖНО: Создаем папку, если её нет ---
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
             # 1. Копируем файл
             shutil.copy2(source_path, output_path)
             
-            # 2. Генерируем ID для уникальности
+            # 2. Генерируем ID
             trap_id = metadata.get("trap_id", str(uuid.uuid4())) if metadata else str(uuid.uuid4())
             
             # 3. Применяем стратегию в зависимости от расширения
@@ -142,18 +138,15 @@ class ContentGenerator:
             logger.error(f"Error deploying binary trap {output_path}: {exc}")
 
     def _inject_zip_comment(self, filepath: str, trap_id: str):
-        """Безопасная инъекция метаданных в ZIP-структуру (DOCX/XLSX)."""
+        """Безопасная инъекция в ZIP-структуру (DOCX/XLSX)."""
         try:
             with zipfile.ZipFile(filepath, mode='a') as zf:
-                # Комментарий в ZIP должен быть bytes
                 zf.comment = f"PHANTOM_ID:{trap_id}".encode('utf-8')
         except zipfile.BadZipFile:
-            # Если файл битый или не ZIP - просто дописываем в конец
-            logger.warning(f"Failed to write zip comment to {filepath}, fallback to append.")
             self._append_watermark(filepath, trap_id)
 
     def _append_watermark(self, filepath: str, trap_id: str):
-        """Дописывание данных в конец файла (для PDF и других форматов)."""
+        """Дописывание данных в конец файла."""
         watermark = f"\n<!-- PHANTOM_TRAP_ID:{trap_id} -->".encode('utf-8')
         with open(filepath, "ab") as f:
             f.write(watermark)

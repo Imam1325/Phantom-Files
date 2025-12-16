@@ -1,13 +1,6 @@
 # ===============================================
 # Phantom Daemon - Traps Manifest
 # ===============================================
-# Этот файл описывает, какие файлы-ловушки и где нужно развернуть.
-# 'id' - уникальный идентификатор для корреляции в логах.
-# 'template' - имя файла-шаблона в папке resources/templates.
-# 'output' - имя файла, которое увидит злоумышленник.
-# 'category' - тип ловушки (для логики реагирования).
-# 'format' - 'text' (будет обработан Jinja2) или 'binary' (будет скопирован).
-# 'priority' - важность ловушки для SOC.
 
 traps:
   - id: trap-db-prod-01
@@ -19,10 +12,24 @@ traps:
 
   - id: trap-aws-root-01
     template: aws_credentials.txt.j2
-    output: .aws/credentials # Скрытый файл, классика
+    output: .aws/credentials  # Генератор теперь сам создаст папку .aws
     category: credential
     format: text
     priority: critical
+
+  - id: trap-env-prod-01
+    template: env.prod.j2
+    output: .env.production
+    category: config
+    format: text
+    priority: medium
+
+  - id: trap-docker-01
+    template: docker-compose.yml.j2
+    output: docker-compose.yml
+    category: config
+    format: text
+    priority: low
 
   - id: trap-vpn-corp-01
     template: vpn_client.ovpn.j2
@@ -31,23 +38,18 @@ traps:
     format: text
     priority: medium
 
-  - id: trap-ssh-key-01
-    template: id_rsa.j2
-    output: .ssh/id_rsa # Скрытый SSH-ключ
-    category: credential
-    format: text
-    priority: high
-
+  # --- БИНАРНЫЕ ФАЙЛЫ (Пути исправлены под твой скриншот) ---
+  
   - id: trap-doc-finance-01
-    template: payroll.docx
-    output: Зарплатная_ведомость_Q4_2024.docx
+    template: binary/payroll_template.docx  # <-- Теперь указывает в папку binary
+    output: Salary_Report_Q4_2024.docx
     category: document
     format: binary
     priority: high
 
   - id: trap-xls-pass-01
-    template: passwords.xlsx
-    output: Учетные_данные_серверов.xlsx
-    category: document
+    template: binary/passwords_template.xlsx # <-- Теперь указывает в папку binary
+    output: Server_Passwords.xlsx
+    category: credential
     format: binary
     priority: critical

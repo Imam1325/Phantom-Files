@@ -22,18 +22,18 @@ class TrapFactory:
         self.templates_dir = config["paths"]["templates"]
         self.manifest_path = config["paths"]["manifest"]
         
-        # Инициализируем генератор с локалью из конфига, по умолчанию 'en_US'
+        # Инициализируем генератор с локалью из конфига
         locale = config.get("factory", {}).get("locale", "en_US")
         self.generator = ContentGenerator(locale=locale)
 
-        # Создаем единый профиль "жертвы" (Shared Context)
+        # Создаем единый профиль "жертвы"
         self.base_context = self.generator.create_base_context()
 
         # Собираем системный контекст
         self.system_context = self._get_system_context()
 
     def _get_system_context(self) -> Dict[str, Any]:
-        """Собирает информацию о текущем пользователе и хосте (безопасно)."""
+        """Собирает информацию о текущем пользователе и хосте."""
         try:
             user = os.getlogin()
         except OSError:
@@ -84,11 +84,9 @@ class TrapFactory:
             }
 
             if task.get("format") == "text":
-                # Для текста генерируем уникальный контекст
                 trap_ctx = self.generator.create_trap_context(self.base_context)
                 self.generator.create_text_trap(tpl_path, out_path, trap_ctx, metadata=metadata)
             else: 
-                # Для бинарников копируем и уникализируем (watermark)
                 self.generator.create_binary_trap(tpl_path, out_path, metadata=metadata)
             success += 1
 
