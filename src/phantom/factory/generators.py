@@ -11,7 +11,7 @@ from jinja2 import Template
 from faker import Faker
 from .metadata import stomp_timestamp
 
-logger = logging.getLogger("Factory.Gen")
+logger = logging.getLogger("Phantom.Generator")
 
 class ContentGenerator:
     """
@@ -130,10 +130,10 @@ class ContentGenerator:
             stomp_timestamp(output_path)
             
             meta_str = f" [{metadata.get('category', 'N/A')}]" if metadata else ""
-            logger.info(f"📄 Generated text trap: {os.path.basename(output_path)}{meta_str}")
+            logger.debug(f"Rendered template: {os.path.basename(output_path)}")
 
         except Exception as exc:
-            logger.error(f"Error generating text trap {output_path}: {exc}")
+            logger.error(f"Template render failed [{output_path}]: {exc}")
 
     def create_binary_trap(
         self,
@@ -174,10 +174,10 @@ class ContentGenerator:
             stomp_timestamp(output_path)
 
             meta_str = f" [{metadata.get('category', 'N/A')}]" if metadata else ""
-            logger.info(f"📎 Deployed UNIQUE binary trap: {os.path.basename(output_path)}{meta_str}")
+            logger.debug(f"Binary artifact cloned: {os.path.basename(output_path)}")
 
         except Exception as exc:
-            logger.error(f"Error deploying binary trap {output_path}: {exc}")
+            logger.error(f"Binary generation failed [{output_path}]: {exc}")
 
     def _inject_zip_comment(self, filepath: str, trap_id: str):
         """

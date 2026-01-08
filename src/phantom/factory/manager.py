@@ -3,6 +3,7 @@ import socket
 import getpass
 import logging
 import yaml
+from datetime import datetime
 from typing import Optional, Dict, Any
 from .generators import ContentGenerator
 
@@ -97,8 +98,9 @@ class TrapFactory:
             Dict[str, Any]: Отчет о результатах, содержащий количество 
                             развернутых ловушек ('deployed') и общее число задач ('total').
         """
-        logger.info("🏭 Trap Factory starting deployment...")
-        logger.info(f"📍 Deployment context: {self.system_context['user']}@{self.system_context['host']}")
+
+        logger.info(f"Daemon initialized (PID: {os.getpid()}). User context: {self.system_context['user']}@{self.system_context['host']}")
+        logger.info("Starting honeytoken deployment sequence...")
 
         # Гарантируем существование целевой папки
         os.makedirs(self.traps_dir, exist_ok=True)
@@ -114,9 +116,11 @@ class TrapFactory:
             tpl_path = os.path.join(self.templates_dir, task["template"])
             out_path = os.path.join(self.traps_dir, task["output"])
 
+            logger.info(f"[Generator] Processing artifact ID: {task.get('id', 'N/A')} | Template: {task['template']}")
+
             # Пропуск задачи, если шаблон отсутствует физически
             if not os.path.exists(tpl_path):
-                logger.warning(f"⚠️ Missing template: {task['template']}. Skipping.")
+                logger.error(f"[Generator] Template missing: {tpl_path}. Skipping.")
                 continue
 
             # Подготовка метаданных для логирования и возможной аналитики
@@ -138,5 +142,5 @@ class TrapFactory:
             
             success += 1
 
-        logger.info(f"✅ Trap deployment finished: {success}/{len(tasks)} traps are active.")
+        logger.info(f"Deployment sequence completed. Active sensors: {success}/{len(tasks)}.")
         return {"deployed": success, "total": len(tasks)}

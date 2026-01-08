@@ -20,15 +20,19 @@ if src_path not in sys.path:
 try:
     from phantom.factory.manager import TrapFactory
 except ImportError as e:
-    print(f"❌ Import Error: {e}")
+    sys.stderr.write(f"[CRITICAL] Import failed: {e}\n")
     sys.exit(1)
 
 # 1. Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(message)s') # Упростили формат для красоты
-logger = logging.getLogger("ManualCheck")
+logging.basicConfig(
+    level=logging.INFO, 
+    format='[%(asctime)s] [%(levelname)s] %(message)s', 
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("TestRunner")
 
 # 2. Мок-конфигурация
-TRAPS_DIR = "./test_output_traps"
+TRAPS_DIR = "./tests"
 mock_config = {
     "paths": {
         "traps_dir": TRAPS_DIR,
@@ -47,8 +51,9 @@ def verify_files(startpath):
     1. Time Stomping (дата должна быть старой).
     2. Integrity (бинарники не должны быть битыми).
     """
-    print("\n🔍 VERIFICATION REPORT:")
-    print(f"Root: {startpath}")
+    print("\n--- INTEGRITY AND ATTRIBUTE VERIFICATION REPORT ---")
+    print(f"{'STATUS':<10} {'OFFSET (DAYS)':<15} {'FILEPATH'}")
+    print("-" * 80)
     
     issues = 0
     current_time = time.time()
@@ -57,12 +62,17 @@ def verify_files(startpath):
     for root, dirs, files in os.walk(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = ' ' * 4 * (level)
-        print(f"{indent}📂 {os.path.basename(root)}/")
+        print(f"{indent}[DIR] {os.path.basename(root)}/")
         
         subindent = ' ' * 4 * (level + 1)
         for f in files:
             filepath = os.path.join(root, f)
-            stats = os.stat(filepath)
+            try:
+                stats = os.stat(filepath)
+            except OSError:
+                print(f"{subindent}[ERR] {f} (Access Denied)")
+                issues += 1
+                continue
             
             # Проверка 1: Time Stomping
             # Файл должен быть старше 24 часов (мы генерируем от 10 дней назад)
@@ -83,45 +93,40 @@ def verify_files(startpath):
                         is_valid_zip = False
 
             # Вывод статуса
-            status_icon = "✅"
+            status_tag = "[OK]"
             details = []
             
             if not is_old:
-                status_icon = "⚠️"
-                details.append("FRESH TIME")
+                status_tag = "[WARN]"
+                details.append("FRESH_TIME (0d)")
                 issues += 1
             else:
-                # Показываем дату для подтверждения
                 file_date = time.strftime('%Y-%m-%d', time.localtime(stats.st_mtime))
-                details.append(f"Date: {file_date}")
+                details.append(f"TS_Date:{file_date}")
 
             if not is_valid_zip:
-                status_icon = "❌"
-                details.append("CORRUPTED ZIP")
+                status_tag = "[FAIL]"
+                details.append("CORRUPTED_STRUCTURE")
                 issues += 1
 
-            print(f"{subindent}{status_icon} {f}  [{', '.join(details)}]")
+            details_str = " | ".join(details)
+            print(f"{subindent}{status_tag:<8} {f:<30} {details_str}")
 
     return issues
 
 def main():
-    print("🚀 Starting Manual Generator Check...")
+    logger.info("Initiating deployment and audit sequence...")
     clean_previous_run()
 
     try:
         # Инициализация и Генерация
         factory = TrapFactory(mock_config)
         summary = factory.deploy_traps()
+
+        deployed = summary.get('deployed', 0)
         
-        # Отчет о генерации
-        print("\n" + "="*40)
-        print(f"📊 GENERATION SUMMARY:")
-        print(f"Deployed:    {summary.get('deployed', 0)}")
-        print(f"Total tasks: {summary.get('total', 0)}")
-        print("="*40)
-        
-        if summary.get('deployed', 0) == 0:
-            print("❌ FAILURE! No traps generated.")
+        if deployed == 0:
+            logger.error("Operation aborted: No artifacts generated.")
             return
 
         # Запуск верификации
@@ -129,14 +134,12 @@ def main():
         
         print("\n" + "="*40)
         if issues == 0:
-            print("🎉 ALL TESTS PASSED! Traps are valid and look old.")
+            logger.info("AUDIT PASSED: All artifacts meet compliance standards.")
         else:
-            print(f"⚠️ FOUND {issues} ISSUES (See details above).")
+            logger.warning(f"AUDIT COMPLETED WITH FINDINGS: {issues} non-compliant artifacts detected.")
 
     except Exception as e:
-        print(f"🔥 CRITICAL ERROR: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.critical(f"System exception: {e}", exc_info=True)
 
 if __name__ == "__main__":
     main()

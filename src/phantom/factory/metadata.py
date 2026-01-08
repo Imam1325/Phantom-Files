@@ -43,7 +43,7 @@ def stomp_timestamp(filepath: str) -> None:
         # 5. Применяем изменения к inode файла
         os.utime(filepath, (atime, mtime))
         
-        logger.debug(f"⏳ Time stomped: {os.path.basename(filepath)} -> {days_ago} days ago")
+        logger.debug(f"Time stomped: {os.path.basename(filepath)} -> {days_ago} days ago")
         
     except OSError as e:
         # Ловим системные ошибки (например, нет прав доступа), но не прерываем работу демона
