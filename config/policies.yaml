@@ -1,0 +1,26 @@
+default:
+  description: "Default production response"
+  mode: "active"
+  actions:
+    - "alert"
+    - "isolate_process"
+    - "collect_forensics"
+    - "block_network"
+    - "kill_process"
+  block_ttl_seconds: 3600
+  ip_block_ttl_seconds: 3600
+
+observation:
+  description: "Observation mode policy"
+  mode: "observation"
+  actions:
+    - "alert"
+    - "collect_forensics"
+
+dry_run:
+  description: "Dry run policy"
+  mode: "dry_run"
+  actions:
+    - "alert"
+    - "collect_forensics"
+

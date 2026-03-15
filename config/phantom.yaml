@@ -1,0 +1,148 @@
+paths:
+  traps_dir: "/var/lib/phantom/traps"
+  logs_dir: "/var/log/phantom"
+  evidence_dir: "/var/lib/phantom/evidence"
+  templates: "resources/templates"
+  user_templates_dir: "/etc/phantom/templates"
+  manifest: "config/traps_manifest.yaml"
+  trap_registry_file: "/var/lib/phantom/trap_registry.json"
+  policies: "config/policies.yaml"
+
+templates:
+  globals: {}
+  datasets: [] # example: ["config/datasets/global.yaml", "config/datasets/org.json"]
+
+sensors:
+  driver: "auto" # auto => fanotify + eBPF, fallback to inotify
+  ebpf_enabled: true
+  ebpf_program: "src/phantom/sensors/ebpf/fs_sensor.bpf.c"
+  ebpf_poll_timeout_ms: 200
+  permission_timeout_ms: 50
+  whitelist_process_names:
+    - "updatedb"
+    - "clamscan"
+    - "rsync"
+  ignore_paths:
+    - "/tmp/*"
+  # inotify PID resolution uses lsof; throttle to avoid DoS
+  inotify_pid_lookup: true
+  inotify_pid_lookup_timeout: 0.3
+  inotify_pid_lookup_min_interval: 0.2
+
+enforcement:
+  # Fallback isolation via UID can affect unrelated processes; disabled by default.
+  allow_uid_fallback: false
+
+orchestrator:
+  mode: "active" # active | observation | dry_run
+  worker_count: 4
+  event_queue_size: 2000
+  event_dedup_window: 2.0
+  orient_timeout: 5.0
+  act_timeout: 60.0
+  max_concurrent_actions: 32
+  auto_execute: true
+  min_severity: "INFO"
+  fail_close: true
+  degraded_timeout_block: true
+  block_ttl_seconds: 3600
+  ip_block_ttl_seconds: 3600
+
+forensics:
+  timeout_seconds: 60
+  memory_dump: true
+  chain_state_file: "/var/lib/phantom/evidence/chain_state.json"
+  s3:
+    enabled: false
+    endpoint_url: "https://minio.local"
+    region: "us-east-1"
+    bucket: "phantom-evidence"
+    prefix: "v2"
+    access_key_env: "PHANTOM_S3_ACCESS_KEY"
+    secret_key_env: "PHANTOM_S3_SECRET_KEY"
+    # Base64 ключ AES-256-GCM (после декодирования 32 байта). Невалидный ключ => загрузка прекращается.
+    encryption_key_env: "PHANTOM_EVIDENCE_KEY_B64"
+    verify_tls: true
+    object_lock_days: 90
+    upload_timeout_seconds: 30
+  pcap_precapture:
+    enabled: true
+    interface: "" # empty => auto detect first non-loopback interface
+    ebpf_program: "src/phantom/sensors/ebpf/net_capture.bpf.c"
+    max_buffer_mb: 64
+    min_memory_mb_for_precapture: 512
+    pre_seconds: 30
+    post_seconds: 30
+    snaplen: 65535
+    capture_ports: []
+
+telemetry:
+  process:
+    # Безопасность: не собираем окружение процессов по умолчанию.
+    collect_env: false
+    # Разрешённые переменные окружения (опционально). Если задан список,
+    # то будут собираться только эти ключи.
+    env_allowlist: []
+    # Запрещённые ключи (перебивает allowlist). Поддерживаются фрагменты.
+    env_denylist:
+      - "PASSWORD"
+      - "SECRET"
+      - "TOKEN"
+      - "API_KEY"
+      - "KEY"
+      - "CRED"
+      - "AUTH"
+      - "COOKIE"
+      - "SESSION"
+      - "PRIVATE"
+      - "SSH"
+      - "AWS_"
+      - "AZURE_"
+      - "GCP_"
+      - "GOOGLE_"
+      - "SLACK_"
+      - "GITHUB_"
+      - "GITLAB_"
+    # Ограничения объёма данных окружения
+    max_env_entries: 200
+    max_env_value_len: 1024
+
+signing:
+  ed25519_private_key_path: "/etc/phantom/keys/evidence_ed25519.pem"
+  ed25519_passphrase_env: "PHANTOM_SIGNING_PASSPHRASE"
+
+api:
+  enabled: true
+  bind: "127.0.0.1"
+  port: 8787
+  security_mode: "api_key" # mtls | api_key | jwt | both
+  api_key_env: "PHANTOM_API_KEY"
+  keys:
+    - env: "PHANTOM_API_KEY_ADMIN"
+      role: "admin"
+    - env: "PHANTOM_API_KEY_EDITOR"
+      role: "editor"
+    - env: "PHANTOM_API_KEY_VIEWER"
+      role: "viewer"
+
+integrations:
+  webhook_urls: []
+  syslog_enabled: false
+  syslog_address: "/dev/log"
+  telegram_enabled: false
+  telegram_bot_token_env: "PHANTOM_TELEGRAM_BOT_TOKEN"
+  telegram_chat_id_env: "PHANTOM_TELEGRAM_CHAT_ID"
+
+rotation:
+  enabled: true
+  interval_seconds: 3600
+  batch_size: 5
+  min_age_seconds: 1800
+
+sandbox:
+  enabled: true
+  image: "phantom-forensics:v2"
+  command: "tcpdump -i any -w /evidence/capture.pcap"
+  timeout_seconds: 60
+  network_disabled: true
+  container_prefix: "phantom_forensics"

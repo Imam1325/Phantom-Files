@@ -1,0 +1,39 @@
+{
+  "version": 4,
+  "terraform_version": "1.7.0",
+  "serial": {{ range(100, 999) | random }},
+  "lineage": "{{ faker.uuid4() }}",
+  "outputs": {
+    "db_endpoint": {
+      "value": "{{ faker.domain_name() }}:5432",
+      "type": "string"
+    },
+    "admin_password": {
+      "value": "{{ faker.password(length=32) }}",
+      "type": "string",
+      "sensitive": true
+    }
+  },
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_db_instance",
+      "name": "production",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "address": "{{ faker.slug() }}.{{ faker.hexify(text='????????????') }}.{{ faker.random_element(elements=['us-east-1', 'eu-west-1', 'ap-southeast-1']) }}.rds.amazonaws.com",
+            "allocated_storage": 100,
+            "engine": "postgres",
+            "engine_version": "15.4",
+            "master_username": "{{ faker.user_name() }}",
+            "master_password": "{{ faker.password(length=24) }}",
+            "port": 5432,
+            "vpc_security_group_ids": ["sg-{{ faker.hexify(text='????????????????') }}"]
+          }
+        }
+      ]
+    }
+  ]
+}

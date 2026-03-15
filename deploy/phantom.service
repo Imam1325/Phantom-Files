@@ -1,0 +1,27 @@
+[Unit]
+Description=Phantom Files Daemon v1.0.0
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=phantom
+Group=phantom
+WorkingDirectory=/opt/phantom
+EnvironmentFile=/etc/phantom/secrets.env
+Environment=PYTHONPATH=/opt/phantom/src
+ExecStart=/usr/bin/python3 -m phantom
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/phantom /var/log/phantom /etc/phantom
+CapabilityBoundingSet=CAP_BPF CAP_NET_ADMIN CAP_SYS_PTRACE CAP_KILL CAP_PERFMON
+AmbientCapabilities=CAP_BPF CAP_NET_ADMIN CAP_SYS_PTRACE CAP_KILL CAP_PERFMON
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+

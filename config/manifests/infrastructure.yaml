@@ -1,0 +1,57 @@
+# Манифест ловушек: инфраструктурные конфигурации
+traps:
+  - id: trap-db-prod-01
+    template: text/prod_db_config.json.j2
+    output: db_production.json
+    category: config
+    format: text
+    priority: critical
+
+  - id: trap-env-prod-01
+    template: text/env.prod.j2
+    output: .env.production
+    category: config
+    format: text
+    priority: high
+
+  - id: trap-env-prod-02
+    template: text/env.prod.j2
+    output: .env.staging
+    category: config
+    format: text
+    priority: medium
+
+  - id: trap-docker-01
+    template: text/docker-compose.yml.j2
+    output: docker-compose.yml
+    category: config
+    format: text
+    priority: medium
+
+  - id: trap-docker-02
+    template: text/docker-compose.yml.j2
+    output: docker-compose.production.yml
+    category: config
+    format: text
+    priority: medium
+
+  - id: trap-terraform-01
+    template: text/terraform_state.json.j2
+    output: terraform.tfstate
+    category: config
+    format: text
+    priority: critical
+
+  - id: trap-terraform-02
+    template: text/terraform_state.json.j2
+    output: .terraform/terraform.tfstate.backup
+    category: config
+    format: text
+    priority: high
+
+  - id: trap-backup-01
+    template: text/backup_script.sh.j2
+    output: scripts/backup_production.sh
+    category: config
+    format: text
+    priority: high

@@ -1,0 +1,14 @@
+/var/log/phantom/*.log /var/log/phantom/*.jsonl {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0640 phantom phantom
+    sharedscripts
+    postrotate
+        # SIGHUP для перезагрузки конфигурации (включая re-open файлов логов)
+        systemctl kill --signal=HUP phantom 2>/dev/null || true
+    endscript
+}

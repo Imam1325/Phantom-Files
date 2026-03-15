@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phantom-daemon"
+version = "1.0.0"
+description = "Production-ready Active Defense Deception daemon for Linux"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "h1z3", email = "pkd12305@gmail.com" }]
+license = { text = "Apache-2.0" }
+dependencies = [
+  "watchdog>=3.0.0",
+  "docker>=6.0.0",
+  "PyYAML>=6.0",
+  "Faker>=19.0.0",
+  "Jinja2>=3.1.0",
+  "psutil>=5.9.0",
+  "cryptography>=42.0.0",
+  "boto3>=1.34.0",
+  "starlette>=0.38.0",
+  "uvicorn[standard]>=0.30.0",
+  "prometheus-client>=0.21.0",
+  "PyJWT>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4.0",
+  "pytest-cov>=4.1.0",
+  "pytest-asyncio>=0.23.0",
+  "httpx>=0.27.0",
+  "ruff>=0.5.0",
+  "black>=24.3.0",
+  "mypy>=1.10.0",
+  "bandit>=1.7.8",
+  "pip-audit>=2.7.0",
+]
+
+[project.scripts]
+phantomd = "phantom.__main__:run"
+phantomctl = "phantom.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+phantom = ["sensors/ebpf/*.c"]
+
+[tool.black]
+target-version = ["py310"]

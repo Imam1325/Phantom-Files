@@ -1,0 +1,29 @@
+# Манифест ловушек: документы (бинарные ловушки)
+traps:
+  - id: trap-doc-finance-01
+    template: binary/payroll_template.docx
+    output: Salary_Report_Q4_2024.docx
+    category: document
+    format: binary
+    priority: high
+
+  - id: trap-doc-finance-02
+    template: binary/payroll_template.docx
+    output: HR_Compensation_Review.docx
+    category: document
+    format: binary
+    priority: high
+
+  - id: trap-xls-finance-01
+    template: binary/passwords_template.xlsx
+    output: Financial_Projections_2025.xlsx
+    category: document
+    format: binary
+    priority: medium
+
+  - id: trap-doc-legal-01
+    template: binary/payroll_template.docx
+    output: NDA_Confidential.docx
+    category: document
+    format: binary
+    priority: medium

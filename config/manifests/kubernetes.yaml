@@ -1,0 +1,29 @@
+# Манифест ловушек: Kubernetes и облачные конфигурации
+traps:
+  - id: trap-k8s-secret-01
+    template: text/k8s_secret.yaml.j2
+    output: k8s/production-secrets.yaml
+    category: credential
+    format: text
+    priority: critical
+
+  - id: trap-k8s-secret-02
+    template: text/k8s_secret.yaml.j2
+    output: k8s/database-credentials.yaml
+    category: credential
+    format: text
+    priority: critical
+
+  - id: trap-kubeconfig-01
+    template: text/kubeconfig.yaml.j2
+    output: .kube/config
+    category: credential
+    format: text
+    priority: critical
+
+  - id: trap-kubeconfig-02
+    template: text/kubeconfig.yaml.j2
+    output: .kube/config.production
+    category: credential
+    format: text
+    priority: critical

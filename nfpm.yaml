@@ -1,0 +1,107 @@
+name: phantom-daemon
+arch: amd64
+platform: linux
+version: 1.0.0
+maintainer: Hize <pkd12305@gmail.com>
+description: |
+  Phantom Files Daemon — Active Defense Deception daemon for Linux.
+  Deploys honeytokens, monitors via fanotify/eBPF, responds to unauthorized access.
+vendor: Phantom Project
+homepage: https://github.com/h1z3/phantom-files
+license: Apache-2.0
+
+depends:
+  - python3 (>= 3.10)
+  - python3-pip
+  - nftables
+
+recommends:
+  - clang
+  - bpftool
+  - docker.io
+
+contents:
+  # Исходный код
+  - src: src/phantom/**
+    dst: /opt/phantom/src/phantom/
+    type: tree
+
+  # Конфигурация
+  - src: config/phantom.yaml
+    dst: /etc/phantom/phantom.yaml
+    type: config
+    file_info:
+      mode: 0600
+      owner: phantom
+      group: phantom
+
+  - src: config/policies.yaml
+    dst: /etc/phantom/policies.yaml
+    type: config
+    file_info:
+      mode: 0600
+      owner: phantom
+      group: phantom
+
+  - src: config/traps_manifest.yaml
+    dst: /etc/phantom/traps_manifest.yaml
+    type: config
+    file_info:
+      mode: 0600
+      owner: phantom
+      group: phantom
+
+  - src: config/logging.yaml
+    dst: /etc/phantom/logging.yaml
+    type: config
+    file_info:
+      mode: 0644
+      owner: phantom
+      group: phantom
+
+  # Шаблоны
+  - src: resources/templates/**
+    dst: /opt/phantom/resources/templates/
+    type: tree
+
+  # Systemd unit
+  - src: deploy/phantom.service
+    dst: /lib/systemd/system/phantom.service
+
+  # Logrotate
+  - src: deploy/phantom.logrotate
+    dst: /etc/logrotate.d/phantom
+
+  # Пустые директории
+  - dst: /var/lib/phantom
+    type: dir
+    file_info:
+      mode: 0750
+      owner: phantom
+      group: phantom
+
+  - dst: /var/lib/phantom/evidence
+    type: dir
+    file_info:
+      mode: 0700
+      owner: phantom
+      group: phantom
+
+  - dst: /var/log/phantom
+    type: dir
+    file_info:
+      mode: 0750
+      owner: phantom
+      group: phantom
+
+  - dst: /etc/phantom/templates
+    type: dir
+    file_info:
+      mode: 0750
+      owner: phantom
+      group: phantom
+
+scripts:
+  preinstall: deploy/scripts/preinstall.sh
+  postinstall: deploy/scripts/postinstall.sh
+  preremove: deploy/scripts/preremove.sh

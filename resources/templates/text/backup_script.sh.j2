@@ -1,0 +1,17 @@
+#!/bin/bash
+# Automated backup script - {{ faker.company() }}
+# DO NOT MODIFY - managed by infrastructure team
+
+BACKUP_HOST="{{ faker.ipv4_private() }}"
+BACKUP_USER="{{ faker.user_name() }}"
+BACKUP_PASS="{{ faker.password(length=20) }}"
+DB_HOST="{{ faker.ipv4_private() }}"
+DB_NAME="{{ faker.slug() }}_production"
+DB_USER="postgres"
+DB_PASS="{{ faker.password(length=24) }}"
+S3_BUCKET="s3://{{ faker.slug() }}-backups"
+AWS_ACCESS_KEY_ID="{{ faker.bothify(text='AKIA??????????????????') }}"
+AWS_SECRET_ACCESS_KEY="{{ faker.password(length=40, special_chars=False) }}"
+
+pg_dump -h "$DB_HOST" -U "$DB_USER" "$DB_NAME" | gzip | \
+  aws s3 cp - "$S3_BUCKET/$(date +%Y%m%d_%H%M%S).sql.gz"
